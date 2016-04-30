@@ -1,7 +1,6 @@
 package com.draketb.boggleme;
 
 import android.content.Context;
-import android.database.DataSetObserver;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
@@ -10,25 +9,23 @@ import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.animation.RotateAnimation;
-import android.widget.Adapter;
-import android.widget.BaseAdapter;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridView;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
-public class BoggleMeActivity extends AppCompatActivity {
+public class BoggleMeActivity
+        extends AppCompatActivity
+        implements ButtonGridAdapter.ButtonClickListener {
     private static final String TAG = BoggleMeActivity.class.getSimpleName();
-    private static final int BOARD_SIZE = 16;
+    private static final int BOARD_SIZE = 4;
     private static final int TIMER_SECONDS = 120;
     private static final Die[] DICE = new Die[] {
         new Die("RIFOBX"), new Die("IFEHEY"), new Die("DENOWS"), new Die("UTOKND"),
@@ -39,65 +36,58 @@ public class BoggleMeActivity extends AppCompatActivity {
 
     private SensorManager mSensorManager;
     private final ShakeDetector mShakeDetector = new ShakeDetector();
+    private Vibrator mVibrator = null;
     private GridView mBoardGrid = null;
+    private ListView mWordList = null;
     private ButtonGridAdapter mButtonGridAdapter = null;
     private Button mStartButton = null;
     private TextView mTimerText = null;
+    private TextView mCurrentWordText = null;
     private TextViewCountDownTimer mTextViewCountDownTimer;
     private BoggleDictionary mDictionary = new BoggleDictionary();
+    private List<String> mWordsFound = new ArrayList<>();
+    private ArrayAdapter<String> mWordsFoundAdapter;
 
-    private static class ButtonGridAdapter extends BaseAdapter {
+    @Override
+    public void OnButtonClicked(String buttonText) {
+        mCurrentWordText.setText(mCurrentWordText.getText().toString().concat(buttonText));
+    }
 
-        private final Button[] _buttons = new Button[BOARD_SIZE];
+    private void clearCurrentWord() {
+        mCurrentWordText.setText("");
+    }
 
-        public ButtonGridAdapter(LayoutInflater inflater) {
-            for (int i = 0; i < _buttons.length; ++i) {
-                _buttons[i] = (Button) inflater.inflate(R.layout.cell, null);
-            }
+    private void addWordFound(String word) {
+        if (mWordsFound.contains(word)) {
+            return; // Do not add the same word twice
         }
 
-        void updateButtonTexts(String[] buttonTexts) {
+        mWordsFound.add(0, word);
+        mWordsFoundAdapter.notifyDataSetChanged();
+    }
 
-            final Random random = new Random();
-            for (int i = 0; i < _buttons.length; ++i) {
-                final String text = i < buttonTexts.length ? buttonTexts[i] : "";
-                final Button button = _buttons[i];
-                button.setText(text);
+    private void clearWordsFound() {
+        mWordsFound.clear();
+        mWordsFoundAdapter.clear();
+        mWordsFoundAdapter.notifyDataSetChanged();
+    }
 
-                final int pivotX = random.nextInt(button.getWidth());
-                final int pivotY = random.nextInt(button.getHeight());
-                final int numRotations = 5;
-                final int direction = random.nextBoolean() ? 1 : -1;
-                final RotateAnimation animation = new RotateAnimation(0, direction * numRotations * 360, pivotX, pivotY);
-                animation.setDuration(1000);
-                button.startAnimation(animation);
-            }
+    private void checkCurrentWord() {
+        final String currentWord = mCurrentWordText.getText().toString().toLowerCase();
+        if (currentWord.length() >= 3 && mDictionary.containsWord(currentWord)) {
+            addWordFound(currentWord);
+        } else {
+            mVibrator.vibrate(50);
         }
-
-        @Override
-        public int getCount() {
-            return _buttons.length;
-        }
-
-        @Override
-        public Object getItem(int position) {
-            return _buttons[position];
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            return position < _buttons.length ? _buttons[position] : null;
-        }
+        clearCurrentWord();
+        mButtonGridAdapter.setAllButtonsEnabled(true);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         // Set up the to receive shake events
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -106,10 +96,9 @@ public class BoggleMeActivity extends AppCompatActivity {
             public void onShake(int count) {
                 Log.d(TAG, String.format("shake count: %d", count));
 
-                final Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-                vibrator.vibrate(100);
+                mVibrator.vibrate(100);
 
-                if (count > 5) {
+                if (count > 3) {
                     updateBoard(getProposalBoard());
                 } else {
                     updateBoard(getBoggleBoard());
@@ -126,9 +115,20 @@ public class BoggleMeActivity extends AppCompatActivity {
             public void onClick(View view) {
                 setContentView(R.layout.activity_boggle_me);
                 mBoardGrid = (GridView) findViewById(R.id.boardGrid);
-                mButtonGridAdapter = new ButtonGridAdapter(getLayoutInflater());
+                mBoardGrid.setNumColumns(BOARD_SIZE);
+                mButtonGridAdapter = new ButtonGridAdapter(getLayoutInflater(), BOARD_SIZE, BOARD_SIZE, BoggleMeActivity.this);
                 mBoardGrid.setAdapter(mButtonGridAdapter);
+                mWordList = (ListView) findViewById(R.id.wordList);
+                mWordsFoundAdapter = new ArrayAdapter<>(getApplicationContext(), R.layout.found_word_text, mWordsFound);
+                mWordList.setAdapter(mWordsFoundAdapter);
                 mTimerText = (TextView) findViewById(R.id.timerText);
+                mCurrentWordText = (TextView) findViewById(R.id.currentWordText);
+                mCurrentWordText.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        checkCurrentWord();
+                    }
+                });
                 setTimerTextView(TIMER_SECONDS);
                 mStartButton = (Button) findViewById(R.id.startButton);
                 mStartButton.setOnClickListener(new View.OnClickListener() {
@@ -168,6 +168,10 @@ public class BoggleMeActivity extends AppCompatActivity {
         }
         mTextViewCountDownTimer = new TextViewCountDownTimer(TIMER_SECONDS);
         mTextViewCountDownTimer.start();
+
+        clearCurrentWord();
+        clearWordsFound();
+        mButtonGridAdapter.setAllButtonsEnabled(true);
     }
 
     private void updateBoard(String[] board) {
@@ -190,33 +194,10 @@ public class BoggleMeActivity extends AppCompatActivity {
     private static String[] getProposalBoard() {
         return new String[] {
             "W", "I", "L", "L",
-            "Y", "O", "U", "M",
-            "A", "R", "R", "Y",
+            "Y", "O", "U", "Y",
+            "M", "A", "R", "R",
             "M", "E", "?", "☺",
         };
-    }
-
-    private static class Die {
-        private final String[] _faces;
-
-        public Die(String[] faces) {
-            _faces = faces;
-        }
-
-        public Die(String faces) {
-            _faces = new String[faces.length()];
-            for (int i = 0; i < _faces.length; ++i) {
-                _faces[i] = faces.substring(i, i + 1);
-            }
-        }
-
-        public String Roll() {
-            if (_faces == null || _faces.length == 0) {
-                return "";
-            }
-
-            return _faces[new Random().nextInt(_faces.length)];
-        }
     }
 
     private static String formatSeconds(int seconds) {
@@ -244,6 +225,7 @@ public class BoggleMeActivity extends AppCompatActivity {
         public void onFinish() {
             setTimerTextView(0);
             mTextViewCountDownTimer = null;
+            mButtonGridAdapter.setAllButtonsEnabled(false);
         }
     }
 }

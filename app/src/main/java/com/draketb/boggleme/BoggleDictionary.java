@@ -20,7 +20,7 @@ public class BoggleDictionary {
         try {
             final BufferedReader reader = new BufferedReader(new InputStreamReader(assets.open("enable1.txt")));
             for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-                _words.add(line);
+                _words.add(line.toLowerCase());
             }
             reader.close();
         } catch (IOException e) {
