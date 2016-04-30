@@ -7,7 +7,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".BoggleMeActivity">
+    tools:context=".MainActivity">
 
     <GridView
         android:layout_width="wrap_content"
@@ -29,22 +29,14 @@
         android:layout_height="wrap_content"
         android:id="@+id/wordList"
         android:layout_below="@+id/currentWordText"
-        android:layout_above="@+id/startButton"/>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Start"
-        android:id="@+id/startButton"
-        android:freezesText="true"
-        android:layout_alignParentBottom="true" />
+        android:layout_above="@+id/timerText"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:id="@+id/timerText"
-        android:layout_alignBaseline="@+id/startButton"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true" />
 
 </RelativeLayout>

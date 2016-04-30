@@ -1,4 +1,4 @@
-package com.draketb.boggleme;
+package com.draketb.ramble;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -21,10 +21,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class BoggleMeActivity
+public class MainActivity
         extends AppCompatActivity
         implements ButtonGridAdapter.ButtonClickListener {
-    private static final String TAG = BoggleMeActivity.class.getSimpleName();
+    private static final String TAG = MainActivity.class.getSimpleName();
     private static final int BOARD_SIZE = 4;
     private static final int TIMER_SECONDS = 120;
     private static final Die[] DICE = new Die[] {
@@ -40,11 +40,10 @@ public class BoggleMeActivity
     private GridView mBoardGrid = null;
     private ListView mWordList = null;
     private ButtonGridAdapter mButtonGridAdapter = null;
-    private Button mStartButton = null;
     private TextView mTimerText = null;
     private TextView mCurrentWordText = null;
     private TextViewCountDownTimer mTextViewCountDownTimer;
-    private BoggleDictionary mDictionary = new BoggleDictionary();
+    private WordList mDictionary = new WordList();
     private List<String> mWordsFound = new ArrayList<>();
     private ArrayAdapter<String> mWordsFoundAdapter;
 
@@ -104,6 +103,7 @@ public class BoggleMeActivity
                     updateBoard(getBoggleBoard());
                 }
 
+                startTimer();
             }
         });
 
@@ -113,10 +113,10 @@ public class BoggleMeActivity
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                setContentView(R.layout.activity_boggle_me);
+                setContentView(R.layout.main_activity);
                 mBoardGrid = (GridView) findViewById(R.id.boardGrid);
                 mBoardGrid.setNumColumns(BOARD_SIZE);
-                mButtonGridAdapter = new ButtonGridAdapter(getLayoutInflater(), BOARD_SIZE, BOARD_SIZE, BoggleMeActivity.this);
+                mButtonGridAdapter = new ButtonGridAdapter(getLayoutInflater(), BOARD_SIZE, BOARD_SIZE, MainActivity.this);
                 mBoardGrid.setAdapter(mButtonGridAdapter);
                 mWordList = (ListView) findViewById(R.id.wordList);
                 mWordsFoundAdapter = new ArrayAdapter<>(getApplicationContext(), R.layout.found_word_text, mWordsFound);
@@ -130,13 +130,6 @@ public class BoggleMeActivity
                     }
                 });
                 setTimerTextView(TIMER_SECONDS);
-                mStartButton = (Button) findViewById(R.id.startButton);
-                mStartButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        startTimer();
-                    }
-                });
             }
         });
 

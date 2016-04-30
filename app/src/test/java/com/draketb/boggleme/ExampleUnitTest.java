@@ -1,4 +1,4 @@
-package com.draketb.boggleme;
+package com.draketb.ramble;
 
 import org.junit.Test;
 

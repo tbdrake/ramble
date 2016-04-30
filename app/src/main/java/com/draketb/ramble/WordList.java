@@ -1,4 +1,4 @@
-package com.draketb.boggleme;
+package com.draketb.ramble;
 
 import android.content.res.AssetManager;
 import android.util.Log;
@@ -11,8 +11,8 @@ import java.util.HashSet;
 /**
  * Created by draketb on 4/29/16.
  */
-public class BoggleDictionary {
-    private static final String TAG = BoggleDictionary.class.getSimpleName();
+public class WordList {
+    private static final String TAG = WordList.class.getSimpleName();
     private HashSet<String> _words = new HashSet<>();
 
     public synchronized void load(AssetManager assets) {
