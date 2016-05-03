@@ -3,20 +3,22 @@ package com.draketb.ramble;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 /**
  * Created by draketb on 4/28/16.
  */
-public class SquareButton extends Button {
-    public SquareButton(Context context) {
+public class SquareTextView extends TextView {
+    public SquareTextView(Context context) {
         super(context);
     }
 
-    public SquareButton(Context context, AttributeSet attrs) {
+    public SquareTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public SquareButton(Context context, AttributeSet attrs, int defStyleAttr) {
+    public SquareTextView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 

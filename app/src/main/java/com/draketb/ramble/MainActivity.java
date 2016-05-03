@@ -1,28 +1,26 @@
 package com.draketb.ramble;
 
+import android.app.Activity;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
 import android.os.Vibrator;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.GridView;
-import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class MainActivity
-        extends AppCompatActivity
+public class MainActivity extends Activity
         implements ButtonGridAdapter.ButtonClickListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int BOARD_SIZE = 4;
@@ -38,7 +36,7 @@ public class MainActivity
     private final ShakeDetector mShakeDetector = new ShakeDetector();
     private Vibrator mVibrator = null;
     private GridView mBoardGrid = null;
-    private ListView mWordList = null;
+    private GridView mWordList = null;
     private ButtonGridAdapter mButtonGridAdapter = null;
     private TextView mTimerText = null;
     private TextView mCurrentWordText = null;
@@ -61,7 +59,7 @@ public class MainActivity
             return; // Do not add the same word twice
         }
 
-        mWordsFound.add(0, word);
+        mWordsFound.add(word);
         mWordsFoundAdapter.notifyDataSetChanged();
     }
 
@@ -69,6 +67,14 @@ public class MainActivity
         mWordsFound.clear();
         mWordsFoundAdapter.clear();
         mWordsFoundAdapter.notifyDataSetChanged();
+    }
+
+    private int getScore() {
+        int score = 0;
+        for (String s : mWordsFound) {
+            score += s.length() - 2;
+        }
+        return score;
     }
 
     private void checkCurrentWord() {
@@ -90,48 +96,26 @@ public class MainActivity
 
         // Set up the to receive shake events
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mShakeDetector.setOnShakeListener(new ShakeDetector.OnShakeListener() {
+
+        setContentView(R.layout.main_activity);
+        mBoardGrid = (GridView) findViewById(R.id.boardGrid);
+        mBoardGrid.setNumColumns(BOARD_SIZE);
+        mButtonGridAdapter = new ButtonGridAdapter(getLayoutInflater(), BOARD_SIZE, BOARD_SIZE, MainActivity.this);
+        mBoardGrid.setAdapter(mButtonGridAdapter);
+        mBoardGrid.setOnItemClickListener(mButtonGridAdapter);
+        mWordList = (GridView) findViewById(R.id.wordList);
+        mWordList.setNumColumns(4);
+        mWordsFoundAdapter = new ArrayAdapter<>(getApplicationContext(), R.layout.found_word_text, mWordsFound);
+        mWordList.setAdapter(mWordsFoundAdapter);
+        mTimerText = (TextView) findViewById(R.id.timerText);
+        mCurrentWordText = (TextView) findViewById(R.id.currentWordText);
+        mCurrentWordText.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onShake(int count) {
-                Log.d(TAG, String.format("shake count: %d", count));
-
-                mVibrator.vibrate(100);
-
-                if (count > 3) {
-                    updateBoard(getProposalBoard());
-                } else {
-                    updateBoard(getBoggleBoard());
-                }
-
-                startTimer();
+            public void onClick(View v) {
+                checkCurrentWord();
             }
         });
-
-        setContentView(R.layout.title_screen);
-
-        final Button startButton = (Button)findViewById(R.id.start_button);
-        startButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                setContentView(R.layout.main_activity);
-                mBoardGrid = (GridView) findViewById(R.id.boardGrid);
-                mBoardGrid.setNumColumns(BOARD_SIZE);
-                mButtonGridAdapter = new ButtonGridAdapter(getLayoutInflater(), BOARD_SIZE, BOARD_SIZE, MainActivity.this);
-                mBoardGrid.setAdapter(mButtonGridAdapter);
-                mWordList = (ListView) findViewById(R.id.wordList);
-                mWordsFoundAdapter = new ArrayAdapter<>(getApplicationContext(), R.layout.found_word_text, mWordsFound);
-                mWordList.setAdapter(mWordsFoundAdapter);
-                mTimerText = (TextView) findViewById(R.id.timerText);
-                mCurrentWordText = (TextView) findViewById(R.id.currentWordText);
-                mCurrentWordText.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        checkCurrentWord();
-                    }
-                });
-                setTimerTextView(TIMER_SECONDS);
-            }
-        });
+        setTimerTextView(TIMER_SECONDS);
 
         // Load dictionary in background
         new AsyncTask<Void, Void, Void>() {
@@ -147,10 +131,30 @@ public class MainActivity
     protected void onResume() {
         super.onResume();
         mSensorManager.registerListener(mShakeDetector, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_UI);
+        mShakeDetector.setOnShakeListener(new ShakeDetector.OnShakeListener() {
+            @Override
+            public void onShake(int count) {
+                if (mBoardGrid == null) {
+                    return;
+                }
+                Log.d(TAG, String.format("shake count: %d", count));
+
+                mVibrator.vibrate(100);
+
+                if (count > 3) {
+                    updateBoard(getProposalBoard());
+                } else {
+                    updateBoard(getBoggleBoard());
+                }
+
+                startTimer();
+            }
+        });
     }
 
     @Override
     protected void onPause() {
+        mShakeDetector.setOnShakeListener(null);
         mSensorManager.unregisterListener(mShakeDetector);
         super.onPause();
     }
@@ -219,6 +223,9 @@ public class MainActivity
             setTimerTextView(0);
             mTextViewCountDownTimer = null;
             mButtonGridAdapter.setAllButtonsEnabled(false);
+            clearCurrentWord();
+
+            Toast.makeText(getApplicationContext(), String.format("Score: %d", getScore()), Toast.LENGTH_LONG).show();
         }
     }
 }

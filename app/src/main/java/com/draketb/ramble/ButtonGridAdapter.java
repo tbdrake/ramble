@@ -5,8 +5,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.RotateAnimation;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-class ButtonGridAdapter extends BaseAdapter {
+class ButtonGridAdapter extends BaseAdapter implements AdapterView.OnItemClickListener {
 
     private enum ButtonState {
         Enabled,
@@ -24,11 +24,10 @@ class ButtonGridAdapter extends BaseAdapter {
 
     private final int mRows;
     private final int mCols;
-    private final int COLOR_ENABLED;
-    private final int COLOR_DISABLED;
+    private final int COLOR_NORMAL = Color.BLACK;
     private final int COLOR_CLICKED = Color.BLUE;
-    private final List<Button> mButtons = new ArrayList<>();
-    private final Map<Button, ButtonState> mButtonStates = new HashMap<>();
+    private final List<SquareTextView> mButtons = new ArrayList<>();
+    private final Map<SquareTextView, ButtonState> mButtonStates = new HashMap<>();
     private final ButtonClickListener mListener;
 
     public interface ButtonClickListener {
@@ -40,29 +39,21 @@ class ButtonGridAdapter extends BaseAdapter {
         mCols = cols;
         mListener = listener;
 
-        final Button testButton = (Button) inflater.inflate(R.layout.cell, null);
-        testButton.setEnabled(true);
-        COLOR_ENABLED = testButton.getCurrentTextColor();
-        testButton.setEnabled(false);
-        COLOR_DISABLED = testButton.getCurrentTextColor();
-
         for (int i = 0; i < (mRows * mCols); ++i) {
-            final Button button = (Button) inflater.inflate(R.layout.cell, null);
-            button.setEnabled(false);
-            button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    onButtonClicked((Button) v);
-                }
-            });
+            final SquareTextView button = (SquareTextView) inflater.inflate(R.layout.die, null);
 
             mButtons.add(button);
             mButtonStates.put(button, ButtonState.Disabled);
         }
     }
 
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        onButtonClicked((SquareTextView) view);
+    }
+
     public void setAllButtonsEnabled(boolean enabled) {
-        for (Button button : mButtons) {
+        for (SquareTextView button : mButtons) {
             if (enabled) {
                 setButtonEnabled(button);
             } else {
@@ -74,14 +65,14 @@ class ButtonGridAdapter extends BaseAdapter {
     public void updateButtonTexts(String[] buttonTexts) {
         for (int i = 0; i < mButtons.size(); ++i) {
             final String text = i < buttonTexts.length ? buttonTexts[i] : "";
-            final Button button = mButtons.get(i);
+            final SquareTextView button = mButtons.get(i);
             button.setText(text);
 
             startRollAnimation(button);
         }
     }
 
-    private void startRollAnimation(Button button) {
+    private void startRollAnimation(SquareTextView button) {
         final Random random = new Random();
         final int pivotX = random.nextInt(button.getWidth());
         final int pivotY = random.nextInt(button.getHeight());
@@ -104,7 +95,7 @@ class ButtonGridAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        return position;
+        return position + 1;
     }
 
     @Override
@@ -112,32 +103,36 @@ class ButtonGridAdapter extends BaseAdapter {
         return getButton(position);
     }
 
-    private Button getButton(int index) {
+    private SquareTextView getButton(int index) {
         return index < mButtons.size() ? mButtons.get(index) : null;
     }
 
-    private void setButtonEnabled(Button button) {
-        button.setEnabled(true);
-        button.setTextColor(COLOR_ENABLED);
+    private void setButtonEnabled(SquareTextView button) {
+        button.setTextColor(COLOR_NORMAL);
         mButtonStates.put(button, ButtonState.Enabled);
     }
 
-    private void setButtonDisabled(Button button) {
-        button.setEnabled(false);
-        button.setTextColor(COLOR_DISABLED);
+    private void setButtonDisabled(SquareTextView button) {
+        button.setTextColor(COLOR_NORMAL);
         mButtonStates.put(button, ButtonState.Disabled);
     }
 
-    private void setButtonClicked(Button button) {
-        button.setEnabled(false);
+    private void setButtonClicked(SquareTextView button) {
         button.setTextColor(COLOR_CLICKED);
         mButtonStates.put(button, ButtonState.Clicked);
     }
 
-    private void onButtonClicked(Button button) {
+    private void onButtonClicked(SquareTextView button) {
         final int index = mButtons.indexOf(button);
         if (index == -1) {
             return;
+        }
+
+        switch (mButtonStates.get(button)) {
+            case Enabled:
+                break;
+            default:
+                return;
         }
 
         setButtonClicked(button);
@@ -146,7 +141,7 @@ class ButtonGridAdapter extends BaseAdapter {
         final int col = index % mCols;
 
         for (int i = 0; i < mButtons.size(); ++i) {
-            final Button b = mButtons.get(i);
+            final SquareTextView b = mButtons.get(i);
             final ButtonState prevState = mButtonStates.get(b);
             if (prevState == ButtonState.Clicked) {
                 continue;
