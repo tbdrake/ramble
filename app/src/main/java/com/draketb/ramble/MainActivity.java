@@ -20,8 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class MainActivity extends Activity
-        implements ButtonGridAdapter.ButtonClickListener {
+public class MainActivity extends Activity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int BOARD_SIZE = 4;
     private static final int TIMER_SECONDS = 120;
@@ -39,14 +38,14 @@ public class MainActivity extends Activity
     private GridView mWordList = null;
     private ButtonGridAdapter mButtonGridAdapter = null;
     private TextView mTimerText = null;
+    private int mTimerSecondsRemaining = 0;
     private TextView mCurrentWordText = null;
-    private TextViewCountDownTimer mTextViewCountDownTimer;
+    private GameCountDownTimer mGameCountDownTimer;
     private WordList mDictionary = new WordList();
     private List<String> mWordsFound = new ArrayList<>();
     private ArrayAdapter<String> mWordsFoundAdapter;
 
-    @Override
-    public void OnButtonClicked(String buttonText) {
+    private void onButtonClicked(String buttonText) {
         mCurrentWordText.setText(mCurrentWordText.getText().toString().concat(buttonText));
     }
 
@@ -100,7 +99,12 @@ public class MainActivity extends Activity
         setContentView(R.layout.main_activity);
         mBoardGrid = (GridView) findViewById(R.id.boardGrid);
         mBoardGrid.setNumColumns(BOARD_SIZE);
-        mButtonGridAdapter = new ButtonGridAdapter(getLayoutInflater(), BOARD_SIZE, BOARD_SIZE, MainActivity.this);
+        mButtonGridAdapter = new ButtonGridAdapter(getLayoutInflater(), BOARD_SIZE, BOARD_SIZE, new ButtonGridAdapter.ButtonClickListener() {
+            @Override
+            public void OnButtonClicked(String buttonText) {
+                onButtonClicked(buttonText);
+            }
+        });
         mBoardGrid.setAdapter(mButtonGridAdapter);
         mBoardGrid.setOnItemClickListener(mButtonGridAdapter);
         mWordList = (GridView) findViewById(R.id.wordList);
@@ -115,7 +119,20 @@ public class MainActivity extends Activity
                 checkCurrentWord();
             }
         });
-        setTimerTextView(TIMER_SECONDS);
+
+        final String[] titleBoard = new String[]{
+                "E", "P", "W", "T",
+                "R", "A", "M", "Y",
+                "G", "B", "L", "E",
+                "V", "D", "R", "A",
+        };
+        updateBoard(titleBoard, false);
+        mButtonGridAdapter.setButtonClicked(1, 0);
+        mButtonGridAdapter.setButtonClicked(1, 1);
+        mButtonGridAdapter.setButtonClicked(1, 2);
+        mButtonGridAdapter.setButtonClicked(2, 1);
+        mButtonGridAdapter.setButtonClicked(2, 2);
+        mButtonGridAdapter.setButtonClicked(2, 3);
 
         // Load dictionary in background
         new AsyncTask<Void, Void, Void>() {
@@ -141,38 +158,50 @@ public class MainActivity extends Activity
 
                 mVibrator.vibrate(100);
 
-                if (count > 3) {
-                    updateBoard(getProposalBoard());
-                } else {
-                    updateBoard(getBoggleBoard());
-                }
-
+                final String[] board = count > 3 ? getProposalBoard() : getBoggleBoard();
+                updateBoard(board, true);
                 startTimer();
             }
         });
+        resumeTimer();
     }
 
     @Override
     protected void onPause() {
+        pauseTimer();
         mShakeDetector.setOnShakeListener(null);
         mSensorManager.unregisterListener(mShakeDetector);
         super.onPause();
     }
 
     private void startTimer() {
-        if (mTextViewCountDownTimer != null) {
-            mTextViewCountDownTimer.cancel();
+        if (mGameCountDownTimer != null) {
+            mGameCountDownTimer.cancel();
         }
-        mTextViewCountDownTimer = new TextViewCountDownTimer(TIMER_SECONDS);
-        mTextViewCountDownTimer.start();
+        mGameCountDownTimer = new GameCountDownTimer(TIMER_SECONDS);
+        mGameCountDownTimer.start();
 
         clearCurrentWord();
         clearWordsFound();
         mButtonGridAdapter.setAllButtonsEnabled(true);
     }
 
-    private void updateBoard(String[] board) {
-        mButtonGridAdapter.updateButtonTexts(board);
+    private void pauseTimer() {
+        if (mGameCountDownTimer != null) {
+            mGameCountDownTimer.cancel();
+            mGameCountDownTimer = null;
+        }
+    }
+
+    private void resumeTimer() {
+        if (mGameCountDownTimer == null && mTimerSecondsRemaining > 0) {
+            mGameCountDownTimer = new GameCountDownTimer(mTimerSecondsRemaining);
+            mGameCountDownTimer.start();
+        }
+    }
+
+    private void updateBoard(String[] board, boolean animate) {
+        mButtonGridAdapter.updateButtonTexts(board, animate);
     }
 
     private static String[] getBoggleBoard() {
@@ -187,13 +216,12 @@ public class MainActivity extends Activity
         return board.toArray(new String[board.size()]);
     }
 
-
     private static String[] getProposalBoard() {
-        return new String[] {
-            "W", "I", "L", "L",
-            "Y", "O", "U", "Y",
-            "M", "A", "R", "R",
-            "M", "E", "?", "☺",
+        return new String[]{
+                "W", "I", "L", "L",
+                "Y", "O", "U", "Y",
+                "M", "A", "R", "R",
+                "M", "E", "?", "☺",
         };
     }
 
@@ -203,29 +231,31 @@ public class MainActivity extends Activity
         return String.format("%02d:%02d", m, s);
     }
 
-    void setTimerTextView(int secondsRemaining) {
-        mTimerText.setText(formatSeconds(secondsRemaining));
+    void setTimerSecondsRemaining(int secondsRemaining) {
+        mTimerSecondsRemaining = secondsRemaining;
+        mTimerText.setText(formatSeconds(mTimerSecondsRemaining));
     }
 
-    private class TextViewCountDownTimer extends CountDownTimer {
-        public TextViewCountDownTimer(int seconds) {
+    private class GameCountDownTimer extends CountDownTimer {
+        public GameCountDownTimer(int seconds) {
             super(seconds * 1000, 100);
-            setTimerTextView(seconds);
+            setTimerSecondsRemaining(seconds);
         }
 
         @Override
         public void onTick(long millisUntilFinished) {
-            setTimerTextView(Math.round(millisUntilFinished / 1000f));
+            setTimerSecondsRemaining(Math.round(millisUntilFinished / 1000f));
         }
 
         @Override
         public void onFinish() {
-            setTimerTextView(0);
-            mTextViewCountDownTimer = null;
+            setTimerSecondsRemaining(0);
+            mGameCountDownTimer = null;
             mButtonGridAdapter.setAllButtonsEnabled(false);
             clearCurrentWord();
 
             Toast.makeText(getApplicationContext(), String.format("Score: %d", getScore()), Toast.LENGTH_LONG).show();
+            mGameCountDownTimer = null; // Set to null to indicate the the timer is not running
         }
     }
 }

@@ -62,13 +62,15 @@ class ButtonGridAdapter extends BaseAdapter implements AdapterView.OnItemClickLi
         }
     }
 
-    public void updateButtonTexts(String[] buttonTexts) {
+    public void updateButtonTexts(String[] buttonTexts, boolean animate) {
         for (int i = 0; i < mButtons.size(); ++i) {
             final String text = i < buttonTexts.length ? buttonTexts[i] : "";
             final SquareTextView button = mButtons.get(i);
             button.setText(text);
 
-            startRollAnimation(button);
+            if (animate) {
+                startRollAnimation(button);
+            }
         }
     }
 
@@ -103,6 +105,13 @@ class ButtonGridAdapter extends BaseAdapter implements AdapterView.OnItemClickLi
         return getButton(position);
     }
 
+    public void setButtonClicked(int row, int col) {
+        final SquareTextView button = getButton(row * mCols + col);
+        if (button != null) {
+            setButtonClicked(button);
+        }
+    }
+
     private SquareTextView getButton(int index) {
         return index < mButtons.size() ? mButtons.get(index) : null;
     }
@@ -128,11 +137,8 @@ class ButtonGridAdapter extends BaseAdapter implements AdapterView.OnItemClickLi
             return;
         }
 
-        switch (mButtonStates.get(button)) {
-            case Enabled:
-                break;
-            default:
-                return;
+        if (mButtonStates.get(button) != ButtonState.Enabled) {
+            return;
         }
 
         setButtonClicked(button);

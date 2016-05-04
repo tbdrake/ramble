@@ -5,7 +5,7 @@ android {
     buildToolsVersion "22.0.1"
 
     defaultConfig {
-        applicationId "com.draketb.boggleme"
+        applicationId "com.draketb.ramble"
         minSdkVersion 19
         targetSdkVersion 22
         versionCode 3
