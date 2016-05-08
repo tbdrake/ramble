@@ -3,4 +3,10 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="dieStrokeColor">#8A8A8A</color>
+    <color name="dieClickedTextColor">#0000CC</color>
+    <color name="dieNormalTextColor">#000000</color>
+    <color name="dieNewWordColor">#0000CC</color>
+    <color name="dieInvalidWordColor">#CC0000</color>
+    <color name="dieDuplicateWordColor">#CCCC00</color>
 </resources>

@@ -9,22 +9,24 @@ import android.widget.TextView;
 /**
  * Created by draketb on 4/28/16.
  */
-public class SquareTextView extends TextView {
-    public SquareTextView(Context context) {
+public class DieView extends TextView {
+    public DieView(Context context) {
         super(context);
     }
 
-    public SquareTextView(Context context, AttributeSet attrs) {
+    public DieView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public SquareTextView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public DieView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        setMeasuredDimension(getMeasuredWidth(), getMeasuredWidth()); // Snap to width
+
+        // Force view to be square
+        setMeasuredDimension(getMeasuredWidth(), getMeasuredWidth());
     }
 }
