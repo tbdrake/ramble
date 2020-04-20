@@ -64,7 +64,7 @@ public class MainActivity extends Activity {
 
         mVibrator.vibrate(100);
 
-        final String[] board = showProposal ? getProposalBoard() : getBoggleBoard();
+        final String[] board = showProposal ? getProposalBoard() : getBoggleBoard(3);
         updateBoard(board, true);
         startTimer();
     }
@@ -226,16 +226,38 @@ public class MainActivity extends Activity {
         mDieViewGridAdapter.updateButtonTexts(board, animate);
     }
 
-    private static String[] getBoggleBoard() {
+    private static String[] getBoggleBoard(int minVowelCount) {
         final List<Die> dice = Arrays.asList(DICE);
         Collections.shuffle(dice);
 
+        // Loop to create a board with at least minVowelCount vowels
         final List<String> board = new ArrayList<>();
-        for (Die die : dice) {
-            board.add(die.Roll());
+        int vowelCount = 0;
+        while (vowelCount < minVowelCount) {
+            board.clear();
+            vowelCount = 0;
+            for (Die die : dice) {
+                final String c = die.Roll();
+                if (isVowel(c)) {
+                    vowelCount += 1;
+                }
+                board.add(die.Roll());
+            }
         }
 
         return board.toArray(new String[board.size()]);
+    }
+
+    static boolean isVowel(String dieFace) {
+        switch (dieFace.toUpperCase()) {
+            case "A":
+            case "E":
+            case "I":
+            case "O":
+            case "U":
+                return true;
+        }
+        return false;
     }
 
     private static String[] getProposalBoard() {
