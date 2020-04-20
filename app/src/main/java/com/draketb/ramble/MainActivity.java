@@ -13,6 +13,7 @@ import android.os.CountDownTimer;
 import android.os.Vibrator;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
@@ -48,21 +49,34 @@ public class MainActivity extends Activity {
     private List<String> mWordsFound = new ArrayList<>();
     private ArrayAdapter<String> mWordsFoundAdapter;
 
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_S) {
+            startGame(false);
+        }
+        return false;
+    }
+
+    private void startGame(boolean showProposal) {
+        if (mBoardGrid == null) {
+            return;
+        }
+
+        mVibrator.vibrate(100);
+
+        final String[] board = showProposal ? getProposalBoard() : getBoggleBoard();
+        updateBoard(board, true);
+        startTimer();
+    }
+
     private void registerShakeDetector() {
         mSensorManager.registerListener(mShakeDetector, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_UI);
         mShakeDetector.setOnShakeListener(new ShakeDetector.OnShakeListener() {
             @Override
             public void onShake(int count) {
-                if (mBoardGrid == null) {
-                    return;
-                }
                 Log.d(TAG, String.format("shake count: %d", count));
-
-                mVibrator.vibrate(100);
-
-                final String[] board = count > 3 ? getProposalBoard() : getBoggleBoard();
-                updateBoard(board, true);
-                startTimer();
+                boolean showProposal = count > 3;
+                startGame(showProposal);
             }
         });
     }

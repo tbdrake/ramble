@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Ramble.iml" filepath="$PROJECT_DIR$/Ramble.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ramble.iml" filepath="$PROJECT_DIR$/ramble.iml" group="ramble" />
+      <module fileurl="file://$PROJECT_DIR$/app/ramble-app.iml" filepath="$PROJECT_DIR$/app/ramble-app.iml" group="ramble/app" />
     </modules>
   </component>
 </project>
